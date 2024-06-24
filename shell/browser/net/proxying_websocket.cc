@@ -72,7 +72,7 @@ void ProxyingWebSocket::Start() {
   }
 
   int result = web_request_api_->OnBeforeRequest(&info_, request_, continuation,
-                                                 &redirect_url_);
+                                                 redirect_url_);
 
   if (result == net::ERR_BLOCKED_BY_CLIENT) {
     OnError(result);
@@ -100,7 +100,7 @@ void ProxyingWebSocket::ContinueToHeadersReceived() {
   info_.AddResponseInfoFromResourceResponse(*response_);
   int result = web_request_api_->OnHeadersReceived(
       &info_, request_, continuation, response_->headers.get(),
-      &override_headers_, &redirect_url_);
+      &override_headers_, redirect_url_);
 
   if (result == net::ERR_BLOCKED_BY_CLIENT) {
     OnError(result);
@@ -188,7 +188,7 @@ void ProxyingWebSocket::OnAuthRequired(
   info_.AddResponseInfoFromResourceResponse(*response_);
   int result = web_request_api_->OnHeadersReceived(
       &info_, request_, continuation, response_->headers.get(),
-      &override_headers_, &redirect_url_);
+      &override_headers_, redirect_url_);
 
   if (result == net::ERR_BLOCKED_BY_CLIENT) {
     OnError(result);

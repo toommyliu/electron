@@ -99,6 +99,8 @@ ProxyingURLLoaderFactory::InProgressRequest::~InProgressRequest() {
     std::move(on_headers_received_callback_)
         .Run(net::ERR_ABORTED, std::nullopt, std::nullopt);
   }
+
+  // delete redirect_url_;
 }
 
 void ProxyingURLLoaderFactory::InProgressRequest::Restart() {
@@ -147,9 +149,9 @@ void ProxyingURLLoaderFactory::InProgressRequest::RestartInternal() {
         base::BindRepeating(&InProgressRequest::ContinueToBeforeSendHeaders,
                             weak_factory_.GetWeakPtr());
   }
-  redirect_url_ = GURL();
+  *redirect_url_ = GURL();
   int result = factory_->web_request_api()->OnBeforeRequest(
-      &info_.value(), request_, continuation, &redirect_url_);
+      &info_.value(), request_, continuation, redirect_url_);
   if (result == net::ERR_BLOCKED_BY_CLIENT) {
     // The request was cancelled synchronously. Dispatch an error notification
     // and terminate the request.
@@ -396,16 +398,16 @@ void ProxyingURLLoaderFactory::InProgressRequest::
   net::RedirectInfo redirect_info;
   redirect_info.status_code = kInternalRedirectStatusCode;
   redirect_info.new_method = request_.method;
-  redirect_info.new_url = redirect_url_;
+  redirect_info.new_url = *redirect_url_;
   redirect_info.new_site_for_cookies =
-      net::SiteForCookies::FromUrl(redirect_url_);
+      net::SiteForCookies::FromUrl(*redirect_url_);
 
   auto head = network::mojom::URLResponseHead::New();
   std::string headers = base::StringPrintf(
       "HTTP/1.1 %i Internal Redirect\n"
       "Location: %s\n"
       "Non-Authoritative-Reason: WebRequest API\n\n",
-      kInternalRedirectStatusCode, redirect_url_.spec().c_str());
+      kInternalRedirectStatusCode, redirect_url_->spec().c_str());
 
   // Cross-origin requests need to modify the Origin header to 'null'. Since
   // CorsURLLoader sets |request_initiator| to the Origin request header in
@@ -414,7 +416,7 @@ void ProxyingURLLoaderFactory::InProgressRequest::
   // Following checks implement the step 10 of "4.4. HTTP-redirect fetch",
   // https://fetch.spec.whatwg.org/#http-redirect-fetch
   if (request_.request_initiator &&
-      (!url::Origin::Create(redirect_url_)
+      (!url::Origin::Create(*redirect_url_)
             .IsSameOriginWith(url::Origin::Create(request_.url)) &&
        !request_.request_initiator->IsSameOriginWith(
            url::Origin::Create(request_.url)))) {
@@ -436,7 +438,7 @@ void ProxyingURLLoaderFactory::InProgressRequest::ContinueToBeforeSendHeaders(
     return;
   }
 
-  if (!current_request_uses_header_client_ && !redirect_url_.is_empty()) {
+  if (!current_request_uses_header_client_ && !redirect_url_->is_empty()) {
     if (for_cors_preflight_) {
       // CORS preflight doesn't support redirect.
       OnRequestError(network::URLLoaderCompletionStatus(net::ERR_FAILED));
@@ -485,7 +487,7 @@ void ProxyingURLLoaderFactory::InProgressRequest::ContinueToStartRequest(
     return;
   }
 
-  if (current_request_uses_header_client_ && !redirect_url_.is_empty()) {
+  if (current_request_uses_header_client_ && !redirect_url_->is_empty()) {
     HandleBeforeRequestRedirect();
     return;
   }
@@ -592,12 +594,13 @@ void ProxyingURLLoaderFactory::InProgressRequest::
     }
   }
 
-  if (for_cors_preflight_ && !redirect_url_.is_empty()) {
+  if (for_cors_preflight_ && !redirect_url_->is_empty()) {
     OnRequestError(network::URLLoaderCompletionStatus(net::ERR_FAILED));
     return;
   }
 
-  std::move(on_headers_received_callback_).Run(net::OK, headers, redirect_url_);
+  std::move(on_headers_received_callback_)
+      .Run(net::OK, headers, *redirect_url_);
   override_headers_ = nullptr;
 
   if (for_cors_preflight_) {
@@ -701,7 +704,7 @@ void ProxyingURLLoaderFactory::InProgressRequest::ContinueToBeforeRedirect(
 void ProxyingURLLoaderFactory::InProgressRequest::
     HandleResponseOrRedirectHeaders(net::CompletionOnceCallback continuation) {
   override_headers_ = nullptr;
-  redirect_url_ = GURL();
+  *redirect_url_ = GURL();
 
   info_->AddResponseInfoFromResourceResponse(*current_response_);
 
@@ -709,7 +712,7 @@ void ProxyingURLLoaderFactory::InProgressRequest::
   DCHECK(info_.has_value());
   int result = factory_->web_request_api()->OnHeadersReceived(
       &info_.value(), request_, std::move(callback_pair.first),
-      current_response_->headers.get(), &override_headers_, &redirect_url_);
+      current_response_->headers.get(), &override_headers_, redirect_url_);
   if (result == net::ERR_BLOCKED_BY_CLIENT) {
     OnRequestError(network::URLLoaderCompletionStatus(result));
     return;

@@ -163,7 +163,7 @@ class ProxyingWebSocket : public network::mojom::WebSocketHandshakeClient,
   OnBeforeSendHeadersCallback on_before_send_headers_callback_;
   OnHeadersReceivedCallback on_headers_received_callback_;
 
-  GURL redirect_url_;
+  raw_ptr<GURL> redirect_url_ = new GURL{};
   bool is_done_ = false;
   bool has_extra_headers_;
   mojo::PendingRemote<network::mojom::WebSocket> websocket_;

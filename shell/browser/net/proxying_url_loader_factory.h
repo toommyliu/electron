@@ -153,7 +153,7 @@ class ProxyingURLLoaderFactory
     network::mojom::URLResponseHeadPtr current_response_;
     mojo::ScopedDataPipeConsumerHandle current_body_;
     scoped_refptr<net::HttpResponseHeaders> override_headers_;
-    GURL redirect_url_;
+    raw_ptr<GURL> redirect_url_ = new GURL{};
 
     const bool for_cors_preflight_ = false;
 
