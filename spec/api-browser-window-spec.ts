@@ -6490,8 +6490,7 @@ describe('BrowserWindow module', () => {
       expect(w.getBounds()).to.deep.equal(newBounds);
     });
 
-    // FIXME(codebytere): figure out why these are failing on macOS arm64.
-    ifit(process.platform === 'darwin' && process.arch !== 'arm64')('should not display a visible background', async () => {
+    ifit(process.platform === 'darwin')('should not display a visible background', async () => {
       const display = screen.getPrimaryDisplay();
 
       const backgroundWindow = new BrowserWindow({
@@ -6533,8 +6532,7 @@ describe('BrowserWindow module', () => {
       );
     });
 
-    // FIXME(codebytere): figure out why these are failing on macOS arm64.
-    ifit(process.platform === 'darwin' && process.arch !== 'arm64')('Allows setting a transparent window via CSS', async () => {
+    ifit(process.platform === 'darwin')('Allows setting a transparent window via CSS', async () => {
       const display = screen.getPrimaryDisplay();
 
       const backgroundWindow = new BrowserWindow({
