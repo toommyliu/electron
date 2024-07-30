@@ -35,7 +35,7 @@ class V8Serializer : public v8::ValueSerializer::Delegate {
 
   bool Serialize(v8::Local<v8::Value> value, blink::CloneableMessage* out) {
     gin_helper::MicrotasksScope microtasks_scope(
-        isolate_, isolate_->GetCurrentContext()->GetMicrotaskQueue(),
+        isolate_->GetCurrentContext(),
         v8::MicrotasksScope::kDoNotRunMicrotasks);
     WriteBlinkEnvelope(19);
 
