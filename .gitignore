@@ -1,0 +1,5 @@
+dist/
+node_modules
+.ds_store
+package-lock.json
+path.txt
