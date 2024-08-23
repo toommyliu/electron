@@ -5,6 +5,7 @@
     "electron": "cli.js"
   },
   "version": "8.1.0",
+  "types": "electron.d.ts",
   "scripts": {
     "postinstall": "node install.js"
   },
